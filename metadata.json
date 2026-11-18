@@ -1,0 +1,5 @@
+{
+  "name": "Lead Time Prediction Platform",
+  "description": "Multi-stage supply chain lead time prediction platform with calibrated optimistic, expected, and pessimistic bounds.",
+  "requestFramePermissions": []
+}

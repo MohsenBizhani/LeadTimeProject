@@ -4,20 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پلتفرم پیش‌بینی زمان تحویل هوشمند</title>
+    <meta name="description" content="Multi-stage supply chain lead time prediction platform with calibrated optimistic, expected, and pessimistic bounds.">
+    <meta property="og:title" content="Lead Time Prediction Platform">
+    <meta property="og:description" content="Multi-stage supply chain lead time prediction platform with calibrated optimistic, expected, and pessimistic bounds.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             color-scheme: dark;
-            --bg: #0f1012;
-            --surface: #1a1c20;
-            --surface-hover: #24272c;
+            --bg: #0b0d10;
+            --bg-elevated: #12151a;
+            --surface: #171a21;
+            --surface-hover: #212630;
             --ink: #f3f4f6;
             --muted: #9ca3af;
+            --muted-dim: #6b7280;
             --accent: #f97316;
+            --accent-soft: rgba(249, 115, 22, 0.14);
             --accent-glow: rgba(249, 115, 22, 0.25);
-            --border: #2d3139;
+            --border: #272c36;
+            --border-strong: #374151;
             --ok: #22c55e;
             --warn: #eab308;
             --err: #ef4444;
@@ -28,14 +35,17 @@
             box-sizing: border-box;
         }
         body {
-            background-color: var(--bg);
+            background:
+                radial-gradient(900px 420px at 50% -80px, rgba(249, 115, 22, 0.11), transparent 70%),
+                var(--bg);
             color: var(--ink);
             font-family: 'Vazirmatn', sans-serif;
             line-height: 1.7;
-            padding: 2rem 1rem;
+            padding: 2rem 1rem 3rem;
+            min-height: 100vh;
         }
         .container {
-            max-width: 960px;
+            max-width: 980px;
             margin: 0 auto;
         }
         header {
@@ -43,33 +53,35 @@
             margin-bottom: 1.75rem;
         }
         header h1 {
-            font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+            font-size: clamp(1.75rem, 3.4vw, 2.35rem);
             font-weight: 700;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.45rem;
             color: var(--ink);
+            letter-spacing: -0.01em;
         }
         header p {
             color: var(--muted);
-            font-size: 1.02rem;
-            max-width: 650px;
-            margin: 0 auto 1rem;
+            font-size: 0.98rem;
+            max-width: 660px;
+            margin: 0 auto 1.1rem;
         }
         .status-bar {
             display: inline-flex;
             align-items: center;
-            gap: 0.65rem;
+            gap: 0.6rem;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 999px;
-            padding: 0.35rem 1rem;
-            font-size: 0.88rem;
+            padding: 0.38rem 1.05rem;
+            font-size: 0.85rem;
             color: var(--muted);
         }
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
             background: var(--warn);
+            flex-shrink: 0;
         }
         .status-dot.ok { background: var(--ok); box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
         .status-dot.err { background: var(--err); box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
@@ -79,7 +91,7 @@
             padding: 0.9rem 1.2rem;
             border-radius: 12px;
             margin-bottom: 1.5rem;
-            font-size: 0.95rem;
+            font-size: 0.93rem;
             border: 1px solid;
         }
         .alert-banner.show { display: block; }
@@ -102,10 +114,13 @@
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 1.75rem 2rem;
-            margin-bottom: 1.75rem;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.34);
+        }
+        @media (max-width: 640px) {
+            .card { padding: 1.25rem 1.1rem; }
         }
         .card-header {
             display: flex;
@@ -116,53 +131,117 @@
             margin-bottom: 1.25rem;
         }
         .section-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--ink);
         }
         .stage-chip {
-            background: rgba(249, 115, 22, 0.14);
+            background: var(--accent-soft);
             color: #fdba74;
-            border: 1px solid rgba(249, 115, 22, 0.35);
+            border: 1px solid rgba(249, 115, 22, 0.38);
             border-radius: 999px;
-            padding: 0.25rem 0.9rem;
-            font-size: 0.85rem;
+            padding: 0.28rem 0.95rem;
+            font-size: 0.84rem;
             font-weight: 600;
         }
+
+        /* Live 4-stage milestone stepper */
+        .stepper {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.6rem;
+            margin-bottom: 1.4rem;
+            padding: 0.75rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        @media (max-width: 640px) {
+            .stepper { grid-template-columns: repeat(2, 1fr); }
+        }
+        .step-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.45rem 0.65rem;
+            border-radius: 9px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            background: transparent;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .step-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: var(--surface-hover);
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+        .step-pill.done {
+            color: #d1fae5;
+            background: rgba(34, 197, 94, 0.08);
+            border-color: rgba(34, 197, 94, 0.28);
+        }
+        .step-pill.done .step-num {
+            background: var(--ok);
+            color: #052e16;
+        }
+        .step-pill.current {
+            color: #ffedd5;
+            background: var(--accent-soft);
+            border-color: rgba(249, 115, 22, 0.45);
+        }
+        .step-pill.current .step-num {
+            background: var(--accent);
+            color: #ffffff;
+        }
+
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 1.15rem;
         }
         .feature-group {
             display: flex;
             flex-direction: column;
-            gap: 0.4rem;
+            gap: 0.42rem;
         }
         .feature-group label {
             font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--muted);
+            font-size: 0.88rem;
+            color: #cbd5e1;
         }
         .feature-group small.hint {
-            font-size: 0.78rem;
-            color: #6b7280;
+            font-size: 0.76rem;
+            color: var(--muted-dim);
         }
         .input-with-clear {
+            position: relative;
             display: flex;
             align-items: center;
-            background: var(--bg);
+            background: var(--bg-elevated);
             border: 1px solid var(--border);
             border-radius: 10px;
             overflow: hidden;
-            transition: all 0.2s ease;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+        .input-with-clear:hover:not(.disabled) {
+            border-color: var(--border-strong);
         }
         .input-with-clear:focus-within {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px var(--accent-glow);
+            background: var(--bg);
         }
         .input-with-clear.disabled {
-            opacity: 0.45;
+            opacity: 0.42;
             pointer-events: none;
         }
         .input-with-clear input {
@@ -174,59 +253,73 @@
             border: none;
             color: var(--ink);
             font-family: inherit;
-            font-size: 0.98rem;
+            font-size: 0.96rem;
             text-align: center;
             direction: ltr;
+        }
+        .input-with-clear input::placeholder {
+            color: #64748b;
+            font-size: 0.88rem;
         }
         .input-with-clear input:focus {
             outline: none;
         }
-        /* Fix dark calendar picker icon on dark theme */
-        input[type="date"] {
-            color-scheme: dark;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1) brightness(1.35);
-            opacity: 0.9;
+        .date-input {
             cursor: pointer;
-            padding: 5px;
-            border-radius: 6px;
-            transition: opacity 0.2s, background-color 0.2s;
+            letter-spacing: 0.03em;
         }
-        input[type="date"]::-webkit-calendar-picker-indicator:hover {
-            opacity: 1;
-            background-color: rgba(249, 115, 22, 0.22);
+        .cal-trigger-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            padding: 0 0.75rem 0 0.45rem;
+            height: 46px;
+            transition: color 0.2s, background-color 0.2s;
+        }
+        .cal-trigger-btn:hover {
+            color: var(--accent);
+            background: var(--surface-hover);
+        }
+        .cal-trigger-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
         }
         .clear-field-btn {
             background: none;
             border: none;
             color: var(--muted);
             cursor: pointer;
-            font-size: 1.25rem;
-            padding: 0 0.75rem;
+            font-size: 1.2rem;
+            padding: 0 0.7rem;
             height: 46px;
             transition: color 0.2s, background-color 0.2s;
         }
         .clear-field-btn:hover {
-            color: var(--accent);
+            color: var(--err);
             background: var(--surface-hover);
         }
         .divider-title {
             grid-column: 1 / -1;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.98rem;
             color: var(--ink);
-            margin-top: 0.75rem;
+            margin-top: 0.55rem;
             padding-top: 1.15rem;
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
         .divider-title span {
             font-weight: 400;
-            font-size: 0.85rem;
+            font-size: 0.83rem;
             color: var(--muted);
         }
         .btn-container {
@@ -234,34 +327,161 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.85rem;
-            margin-top: 0.75rem;
+            margin-top: 0.65rem;
         }
         .btn {
             flex: 1;
-            min-width: 150px;
-            height: 46px;
-            padding: 0 1rem;
+            min-width: 160px;
+            height: 48px;
+            padding: 0 1.15rem;
             border: none;
-            border-radius: 10px;
+            border-radius: 11px;
             font-family: inherit;
             font-weight: 700;
-            font-size: 0.96rem;
+            font-size: 0.95rem;
             cursor: pointer;
-            transition: filter 0.2s, transform 0.1s, opacity 0.2s;
+            transition: filter 0.2s, transform 0.1s, opacity 0.2s, box-shadow 0.2s;
         }
-        .btn:hover:not(:disabled) { filter: brightness(1.1); }
-        .btn:active:not(:disabled) { transform: scale(0.98); }
+        .btn:hover:not(:disabled) { filter: brightness(1.08); }
+        .btn:active:not(:disabled) { transform: scale(0.985); }
         .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(249, 115, 22, 0.26);
+        }
         .btn-secondary {
             background: var(--surface-hover);
             color: var(--ink);
             border: 1px solid var(--border);
+            flex: 0 1 190px;
+        }
+
+        /* Custom dark-theme Date Picker Popover */
+        .datepicker-popover {
+            position: fixed;
+            z-index: 9999;
+            width: 300px;
+            background: #1b1f28;
+            border: 1px solid var(--border-strong);
+            border-radius: 14px;
+            padding: 0.85rem;
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.65);
+            display: none;
+            direction: ltr;
+            user-select: none;
+        }
+        .datepicker-popover.open {
+            display: block;
+            animation: popIn 0.14s ease-out;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .dp-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.4rem;
+            margin-bottom: 0.65rem;
+        }
+        .dp-nav-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--ink);
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .dp-nav-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .dp-selects {
+            display: flex;
+            gap: 0.35rem;
+            flex: 1;
+            justify-content: center;
+        }
+        .dp-select {
+            background: var(--bg-elevated);
+            color: var(--ink);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 0.22rem 0.4rem;
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .dp-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }
+        .dp-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+        .dp-day {
+            height: 34px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--ink);
+            font-size: 0.84rem;
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s;
+        }
+        .dp-day:hover:not(:disabled) {
+            background: var(--surface-hover);
+        }
+        .dp-day.muted {
+            color: #4b5563;
+        }
+        .dp-day.today {
+            border: 1px solid rgba(249, 115, 22, 0.55);
+        }
+        .dp-day.selected {
+            background: var(--accent);
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .dp-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.65rem;
+            padding-top: 0.55rem;
+            border-top: 1px solid var(--border);
+        }
+        .dp-foot-btn {
+            background: none;
+            border: none;
+            color: #fdba74;
+            font-family: 'Vazirmatn', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.2rem 0.45rem;
+            border-radius: 6px;
+        }
+        .dp-foot-btn:hover {
+            background: var(--accent-soft);
         }
 
         #resultsPanel {
             display: none;
-            animation: fadeIn 0.3s ease-in-out;
+            animation: fadeIn 0.25s ease-out;
         }
         #resultsPanel.show { display: block; }
         @keyframes fadeIn {
@@ -270,12 +490,12 @@
         }
 
         .stage-banner {
-            background: var(--bg);
+            background: var(--bg-elevated);
             border-right: 4px solid var(--accent);
-            border-radius: 10px;
-            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            padding: 0.95rem 1.25rem;
             font-weight: 700;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.4rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -285,62 +505,68 @@
         .stage-banner span {
             color: var(--muted);
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
         }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-            gap: 1.1rem;
-            margin-bottom: 1.5rem;
+            gap: 1rem;
+            margin-bottom: 1.45rem;
         }
         .stat-box {
-            background: var(--bg);
+            background: var(--bg-elevated);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 1.15rem;
             text-align: center;
+            transition: transform 0.15s ease, border-color 0.2s ease;
+        }
+        .stat-box:hover {
+            transform: translateY(-1px);
         }
         .stat-box.highlight {
             border-color: var(--accent);
-            background: rgba(249, 115, 22, 0.06);
+            background: rgba(249, 115, 22, 0.08);
+            box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.15);
         }
-        .stat-box.optimistic { border-color: rgba(34, 197, 94, 0.45); }
+        .stat-box.optimistic { border-color: rgba(34, 197, 94, 0.42); }
         .stat-box.pessimistic { border-color: rgba(239, 68, 68, 0.4); }
         .stat-label {
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             color: var(--muted);
-            margin-bottom: 0.35rem;
+            margin-bottom: 0.3rem;
         }
         .stat-val {
-            font-size: 1.95rem;
+            font-size: 2rem;
             font-weight: 700;
             color: var(--ink);
+            line-height: 1.25;
         }
         .stat-val small {
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 500;
             color: var(--muted);
-            margin-right: 0.25rem;
+            margin-right: 0.28rem;
         }
         .stat-date {
-            margin-top: 0.35rem;
+            margin-top: 0.4rem;
             font-size: 0.82rem;
             color: var(--muted);
         }
 
         .range-visual {
-            background: var(--bg);
+            background: var(--bg-elevated);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 1rem 1.25rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.45rem;
         }
         .range-bar-track {
             position: relative;
-            height: 12px;
-            background: #262930;
+            height: 13px;
+            background: #252a34;
             border-radius: 999px;
-            margin: 0.85rem 0 0.5rem;
+            margin: 0.85rem 0 0.7rem;
             overflow: hidden;
         }
         .range-bar-elapsed {
@@ -355,7 +581,7 @@
             top: 0;
             bottom: 0;
             background: linear-gradient(90deg, #ef4444, #f97316, #22c55e);
-            opacity: 0.85;
+            opacity: 0.88;
             border-radius: 999px;
         }
         .range-bar-expected {
@@ -365,48 +591,50 @@
             width: 4px;
             background: #ffffff;
             border-radius: 2px;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+        }
+        .range-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .legend-swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            display: inline-block;
         }
         .supplier-intel {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            background: var(--bg);
+            gap: 0.85rem;
+            background: var(--bg-elevated);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem 1.25rem;
-            margin-top: 1.25rem;
+            border-radius: 14px;
+            padding: 1.05rem 1.25rem;
+            margin-top: 1.35rem;
             font-size: 0.9rem;
         }
         .intel-item span {
             display: block;
             color: var(--muted);
-            font-size: 0.8rem;
+            font-size: 0.79rem;
+            margin-bottom: 0.15rem;
         }
-        .intel-item strong { color: var(--ink); }
-
-        .metrics-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.88rem;
-            margin-top: 0.75rem;
-        }
-        .metrics-table th, .metrics-table td {
-            padding: 0.65rem 0.75rem;
-            border-bottom: 1px solid var(--border);
-            text-align: center;
-        }
-        .metrics-table th {
-            color: var(--muted);
-            font-weight: 600;
-        }
-        .metrics-table tr.active-row {
-            background: rgba(249, 115, 22, 0.08);
-        }
+        .intel-item strong { color: var(--ink); font-weight: 600; }
 
         footer {
             text-align: center;
-            color: var(--muted);
-            font-size: 0.85rem;
-            margin-top: 2.5rem;
+            color: var(--muted-dim);
+            font-size: 0.84rem;
+            margin-top: 2.25rem;
         }
     </style>
 </head>
@@ -414,8 +642,8 @@
 
     <div class="container">
         <header>
-            <h1>پلتفرم پیش‌بینی زمان تحویل</h1>
-            <p>تحلیل هوشمند و پیش‌رونده لجستیک زنجیره تأمین با کالیبرasyon بازه‌های خوش‌بینانه، محتمل و بدبینانه</p>
+            <h1>پلتفرم پیش‌بینی زمان تحویل هوشمند</h1>
+            <p>تحلیل پیش‌رونده زنجیره تأمین در هر مرحله سفارش با کالیبراسیون بازه‌های خوش‌بینانه، واقع‌بینانه و بدبینانه</p>
             <div class="status-bar">
                 <span class="status-dot" id="serverDot"></span>
                 <span id="serverStatusText">در حال بررسی اتصال سرور...</span>
@@ -431,6 +659,25 @@
                 <span class="stage-chip" id="liveStageChip">مرحله فعلی فرم: لحظه ثبت سفارش (مرحله ۰)</span>
             </div>
 
+            <div class="stepper" id="stageStepper">
+                <div class="step-pill current" data-step="0">
+                    <span class="step-num">۰</span>
+                    <span>ثبت سفارش</span>
+                </div>
+                <div class="step-pill" data-step="1">
+                    <span class="step-num">۱</span>
+                    <span>مجوز وزارتخانه</span>
+                </div>
+                <div class="step-pill" data-step="2">
+                    <span class="step-num">۲</span>
+                    <span>حرکت کشتی</span>
+                </div>
+                <div class="step-pill" data-step="3">
+                    <span class="step-num">۳</span>
+                    <span>ورود به گمرک</span>
+                </div>
+            </div>
+
             <div class="features-grid">
                 <div class="feature-group">
                     <label for="sap_code">کد کالا (SAP)</label>
@@ -442,7 +689,7 @@
                 </div>
 
                 <div class="feature-group">
-                    <label for="country">کشور Principle</label>
+                    <label for="country">کشور مبدأ (Principle)</label>
                     <div class="input-with-clear">
                         <input type="text" id="country" list="countryList" dir="ltr" placeholder="انتخاب یا تایپ کشور...">
                         <datalist id="countryList"></datalist>
@@ -460,7 +707,7 @@
                 </div>
 
                 <div class="feature-group">
-                    <label for="weight">وزن (کیلوگرم)</label>
+                    <label for="weight">وزن محموله (کیلوگرم)</label>
                     <div class="input-with-clear">
                         <input type="number" id="weight" min="1" step="any" dir="ltr" placeholder="مثلاً 24000">
                         <button type="button" class="clear-field-btn" data-field="weight" title="پاک کردن">×</button>
@@ -469,21 +716,27 @@
 
                 <div class="feature-group">
                     <label for="registry_date">تاریخ ثبت سیستم</label>
-                    <div class="input-with-clear">
-                        <input type="date" id="registry_date" dir="ltr">
+                    <div class="input-with-clear" id="wrap_registry_date">
+                        <button type="button" class="cal-trigger-btn" data-cal-for="registry_date" title="انتخاب تاریخ" aria-label="انتخاب تاریخ">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </button>
+                        <input type="text" id="registry_date" class="date-input" dir="ltr" inputmode="numeric" placeholder="YYYY-MM-DD" autocomplete="off">
                         <button type="button" class="clear-field-btn" data-field="registry_date" title="پاک کردن">×</button>
                     </div>
                 </div>
 
                 <div class="divider-title">
-                    <div>تاریخ مراحل انجام‌شده (اختیاری جهت افزایش دقت)</div>
-                    <span>ترتیب زمانی باید از راست به چپ تکمیل شود</span>
+                    <div>تاریخ مراحل انجام‌شده (اختیاری جهت افزایش دقت پیش‌بینی)</div>
+                    <span>به ترتیب زمانی از مرحله ۱ تا ۳ تکمیل کنید</span>
                 </div>
 
                 <div class="feature-group">
                     <label for="ministry_date">۱. تاریخ مجوز وزارتخانه</label>
                     <div class="input-with-clear" id="wrap_ministry_date">
-                        <input type="date" id="ministry_date" dir="ltr">
+                        <button type="button" class="cal-trigger-btn" data-cal-for="ministry_date" title="انتخاب تاریخ" aria-label="انتخاب تاریخ">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </button>
+                        <input type="text" id="ministry_date" class="date-input" dir="ltr" inputmode="numeric" placeholder="YYYY-MM-DD" autocomplete="off">
                         <button type="button" class="clear-field-btn" data-field="ministry_date" title="پاک کردن">×</button>
                     </div>
                 </div>
@@ -491,7 +744,10 @@
                 <div class="feature-group">
                     <label for="ship_date">۲. تاریخ حرکت کشتی</label>
                     <div class="input-with-clear disabled" id="wrap_ship_date">
-                        <input type="date" id="ship_date" dir="ltr" disabled>
+                        <button type="button" class="cal-trigger-btn" data-cal-for="ship_date" title="انتخاب تاریخ" aria-label="انتخاب تاریخ">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </button>
+                        <input type="text" id="ship_date" class="date-input" dir="ltr" inputmode="numeric" placeholder="YYYY-MM-DD" autocomplete="off" disabled>
                         <button type="button" class="clear-field-btn" data-field="ship_date" title="پاک کردن">×</button>
                     </div>
                     <small class="hint">پس از ثبت تاریخ مجوز وزارتخانه فعال می‌شود</small>
@@ -500,16 +756,18 @@
                 <div class="feature-group">
                     <label for="customs_date">۳. تاریخ ورود به گمرک</label>
                     <div class="input-with-clear disabled" id="wrap_customs_date">
-                        <input type="date" id="customs_date" dir="ltr" disabled>
+                        <button type="button" class="cal-trigger-btn" data-cal-for="customs_date" title="انتخاب تاریخ" aria-label="انتخاب تاریخ">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </button>
+                        <input type="text" id="customs_date" class="date-input" dir="ltr" inputmode="numeric" placeholder="YYYY-MM-DD" autocomplete="off" disabled>
                         <button type="button" class="clear-field-btn" data-field="customs_date" title="پاک کردن">×</button>
                     </div>
                     <small class="hint">پس از ثبت تاریخ حرکت کشتی فعال می‌شود</small>
                 </div>
 
                 <div class="btn-container">
-                    <button type="button" id="sampleBtn" class="btn btn-secondary">بارگذاری سفارش نمونه</button>
-                    <button type="button" id="clearAllBtn" class="btn btn-secondary">پاک کردن همه</button>
                     <button type="button" id="predictBtn" class="btn btn-primary">محاسبه پیش‌بینی و بازه خطا</button>
+                    <button type="button" id="clearAllBtn" class="btn btn-secondary">پاک کردن همه</button>
                 </div>
             </div>
         </div>
@@ -522,7 +780,7 @@
             </div>
 
             <div class="range-visual">
-                <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--muted);">
+                <div style="display:flex; justify-content:space-between; font-size:0.84rem; color:var(--muted); flex-wrap:wrap; gap:0.4rem;">
                     <span>شروع (روز ۰)</span>
                     <span id="rangeSummaryLabel">بازه تحویل پیش‌بینی‌شده</span>
                 </div>
@@ -531,9 +789,14 @@
                     <div class="range-bar-interval" id="barInterval"></div>
                     <div class="range-bar-expected" id="barExpected"></div>
                 </div>
+                <div class="range-legend">
+                    <span class="legend-item"><i class="legend-swatch" style="background:#64748b;"></i>زمان سپری‌شده</span>
+                    <span class="legend-item"><i class="legend-swatch" style="background:linear-gradient(90deg, #ef4444, #f97316, #22c55e);"></i>بازه محتمل (خوش‌بینانه تا بدبینانه)</span>
+                    <span class="legend-item"><i class="legend-swatch" style="background:#ffffff;"></i>پیش‌بینی واقع‌بینانه</span>
+                </div>
             </div>
 
-            <h3 class="section-title" style="font-size: 1.08rem; margin-bottom: 0.9rem;">زمان کل تحویل (از ثبت سفارش تا کارخانه)</h3>
+            <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 0.85rem;">زمان کل تحویل (از ثبت سفارش تا کارخانه)</h3>
             <div class="stats-grid">
                 <div class="stat-box optimistic">
                     <div class="stat-label">بهترین سناریو (خوش‌بینانه)</div>
@@ -552,7 +815,7 @@
                 </div>
             </div>
 
-            <h3 class="section-title" style="font-size: 1.08rem; margin-bottom: 0.9rem;">زمان باقی‌مانده تا تحویل نهایی</h3>
+            <h3 class="section-title" style="font-size: 1.05rem; margin-bottom: 0.85rem;">زمان باقی‌مانده تا تحویل نهایی</h3>
             <div class="stats-grid" style="margin-bottom: 0;">
                 <div class="stat-box optimistic">
                     <div class="stat-label">حداقل باقی‌مانده</div>
@@ -573,47 +836,21 @@
                 <div class="intel-item"><span>تعداد سوابق تکمیل‌شده</span><strong id="intelCount">-</strong></div>
                 <div class="intel-item"><span>میانگین تاریخی تأمین‌کننده</span><strong id="intelMean">-</strong></div>
                 <div class="intel-item"><span>روند ۳ سفارش اخیر</span><strong id="intelTrend">-</strong></div>
-                <div class="intel-item"><span>دقت مرحله فعلی (R² / MAE)</span><strong id="intelStageAcc">-</strong></div>
-            </div>
-        </div>
-
-        <!-- Model Metrics Card -->
-        <div class="card" id="metricsCard">
-            <div class="card-header">
-                <h3 class="section-title" style="font-size: 1.08rem;">ارزیابی دقت و کالیبرasyon مدل روی داده آزمون</h3>
-                <span id="metricsMeta" style="font-size:0.84rem; color:var(--muted);"></span>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="metrics-table">
-                    <thead>
-                        <tr>
-                            <th>مرحله</th>
-                            <th>R²</th>
-                            <th>خطای میانگین (MAE)</th>
-                            <th>پوشش بازه</th>
-                            <th>نرخ کمتر از خوش‌بینانه</th>
-                            <th>نرخ بیشتر از بدبینانه</th>
-                        </tr>
-                    </thead>
-                    <tbody id="metricsBody"></tbody>
-                </table>
+                <div class="intel-item"><span>خطای میانگین (MAE)</span><strong id="intelStageAcc">-</strong></div>
             </div>
         </div>
 
         <!-- Retrain Card -->
         <div class="card">
-            <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.4rem;">به‌روزرسانی و بازآموزی مدل</h3>
-            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem;">
-                جهت به‌روزرسانی مدل‌ها با الگوریتم ژنتیک، کالیبرasyon CQR و به‌روزرسانی لیست‌ها، فایل CSV جدید را بارگذاری کنید.
+            <h3 class="section-title" style="font-size: 1.08rem; margin-bottom: 0.4rem;">به‌روزرسانی و بازآموزی مدل</h3>
+            <p style="color: var(--muted); font-size: 0.89rem; margin-bottom: 1rem;">
+                جهت به‌روزرسانی مدل‌ها با داده‌های جدید و به‌روزرسانی لیست‌های کشویی، فایل CSV جدید را بارگذاری کنید.
             </p>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-                <input type="file" id="datasetFile" accept=".csv" style="flex: 1; min-width:220px; padding: 0.55rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--ink);">
-                <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem; color:var(--muted); cursor:pointer;">
-                    <input type="checkbox" id="useTuningCheck" checked> بهینه‌سازی ژنتیک
-                </label>
+                <input type="file" id="datasetFile" accept=".csv" style="flex: 1; min-width:220px; padding: 0.55rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 9px; color: var(--ink);">
                 <button type="button" id="retrainBtn" class="btn btn-primary" style="max-width: 210px;">بازآموزی مدل</button>
             </div>
-            <div id="retrainStatus" style="margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem;"></div>
+            <div id="retrainStatus" style="margin-top: 0.75rem; color: var(--muted); font-size: 0.89rem;"></div>
         </div>
 
         <footer>
@@ -621,10 +858,38 @@
         </footer>
     </div>
 
+    <!-- Custom Dark-Theme Calendar Popover (works reliably inside iframes and all browsers) -->
+    <div id="datePickerPopover" class="datepicker-popover" role="dialog" aria-label="انتخاب تاریخ">
+        <div class="dp-header">
+            <button type="button" class="dp-nav-btn" id="dpPrevMonth" title="ماه قبل">&#8249;</button>
+            <div class="dp-selects">
+                <select id="dpMonthSelect" class="dp-select" aria-label="ماه"></select>
+                <select id="dpYearSelect" class="dp-select" aria-label="سال"></select>
+            </div>
+            <button type="button" class="dp-nav-btn" id="dpNextMonth" title="ماه بعد">&#8250;</button>
+        </div>
+        <div class="dp-weekdays">
+            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+        </div>
+        <div class="dp-days" id="dpDaysGrid"></div>
+        <div class="dp-footer">
+            <button type="button" class="dp-foot-btn" id="dpTodayBtn">امروز</button>
+            <button type="button" class="dp-foot-btn" id="dpCloseBtn" style="color:var(--muted);">بستن</button>
+        </div>
+    </div>
+
     <script>
-        const API_BASE = 'http://127.0.0.1:8001';
+        const API_BASE = '';
+        function getTodayIso() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         document.getElementById('year').textContent = new Date().getFullYear();
-        document.getElementById('registry_date').valueAsDate = new Date();
+        document.getElementById('registry_date').value = getTodayIso();
 
         function showAlert(msg, type = 'error') {
             const el = document.getElementById('globalAlert');
@@ -661,7 +926,9 @@
         }
 
         function syncMilestoneControls() {
-            const minVal = document.getElementById('ministry_date').value;
+            const regVal = document.getElementById('registry_date').value.trim();
+            const minEl = document.getElementById('ministry_date');
+            const minVal = minEl.value.trim();
             const shipEl = document.getElementById('ship_date');
             const shipWrap = document.getElementById('wrap_ship_date');
             const custEl = document.getElementById('customs_date');
@@ -676,7 +943,7 @@
                 shipWrap.classList.remove('disabled');
             }
 
-            if (!shipEl.value) {
+            if (!shipEl.value.trim()) {
                 custEl.value = '';
                 custEl.disabled = true;
                 custWrap.classList.add('disabled');
@@ -685,16 +952,254 @@
                 custWrap.classList.remove('disabled');
             }
 
+            let activeStage = 0;
             const chip = document.getElementById('liveStageChip');
-            if (custEl.value) chip.textContent = 'مرحله فعلی فرم: پس از ورود به گمرک مقصد (مرحله ۳)';
-            else if (shipEl.value) chip.textContent = 'مرحله فعلی فرم: پس از حرکت کشتی از princípio (مرحله ۲)';
-            else if (minVal) chip.textContent = 'مرحله فعلی فرم: پس از مجوز وزارتخانه (مرحله ۱)';
-            else chip.textContent = 'مرحله فعلی فرم: لحظه ثبت سفارش (مرحله ۰)';
+            if (custEl.value.trim()) {
+                activeStage = 3;
+                chip.textContent = 'مرحله فعلی فرم: پس از ورود به گمرک مقصد (مرحله ۳)';
+            } else if (shipEl.value.trim()) {
+                activeStage = 2;
+                chip.textContent = 'مرحله فعلی فرم: پس از حرکت کشتی از مبدأ (مرحله ۲)';
+            } else if (minVal) {
+                activeStage = 1;
+                chip.textContent = 'مرحله فعلی فرم: پس از مجوز وزارتخانه (مرحله ۱)';
+            } else {
+                activeStage = 0;
+                chip.textContent = 'مرحله فعلی فرم: لحظه ثبت سفارش (مرحله ۰)';
+            }
+
+            document.querySelectorAll('#stageStepper .step-pill').forEach(pill => {
+                const step = Number(pill.getAttribute('data-step'));
+                pill.classList.remove('done', 'current');
+                if (step < activeStage || (step === 0 && regVal && activeStage > 0)) {
+                    pill.classList.add('done');
+                } else if (step === activeStage) {
+                    pill.classList.add('current');
+                }
+            });
         }
 
-        ['ministry_date', 'ship_date', 'customs_date'].forEach(id => {
-            document.getElementById(id).addEventListener('change', syncMilestoneControls);
+        ['registry_date', 'ministry_date', 'ship_date', 'customs_date'].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('change', syncMilestoneControls);
+            el.addEventListener('input', syncMilestoneControls);
         });
+
+        /* ---------------- Custom Dark-Theme Calendar Picker ---------------- */
+        (function initCustomDatePicker() {
+            const popover = document.getElementById('datePickerPopover');
+            const monthSel = document.getElementById('dpMonthSelect');
+            const yearSel = document.getElementById('dpYearSelect');
+            const daysGrid = document.getElementById('dpDaysGrid');
+            const prevBtn = document.getElementById('dpPrevMonth');
+            const nextBtn = document.getElementById('dpNextMonth');
+            const todayBtn = document.getElementById('dpTodayBtn');
+            const closeBtn = document.getElementById('dpCloseBtn');
+
+            const MONTH_NAMES = [
+                'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+            ];
+
+            MONTH_NAMES.forEach((mName, idx) => {
+                const opt = document.createElement('option');
+                opt.value = String(idx);
+                opt.textContent = mName;
+                monthSel.appendChild(opt);
+            });
+
+            const curYear = new Date().getFullYear();
+            for (let y = 2018; y <= curYear + 3; y++) {
+                const opt = document.createElement('option');
+                opt.value = String(y);
+                opt.textContent = String(y);
+                yearSel.appendChild(opt);
+            }
+
+            let activeInput = null;
+            let viewYear = curYear;
+            let viewMonth = new Date().getMonth();
+
+            function parseIso(val) {
+                const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((val || '').trim());
+                if (!m) return null;
+                const y = Number(m[1]), mo = Number(m[2]) - 1, d = Number(m[3]);
+                const dt = new Date(y, mo, d);
+                if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) return null;
+                return dt;
+            }
+
+            function renderCalendar() {
+                monthSel.value = String(viewMonth);
+                yearSel.value = String(viewYear);
+                daysGrid.innerHTML = '';
+
+                const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+                const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+                const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
+                const todayIso = getTodayIso();
+                const selectedVal = activeInput ? activeInput.value.trim() : '';
+
+                // Leading days from previous month
+                for (let i = firstDay - 1; i >= 0; i--) {
+                    const dayNum = prevMonthDays - i;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'dp-day muted';
+                    btn.textContent = String(dayNum);
+                    btn.addEventListener('click', () => {
+                        const prevMo = viewMonth === 0 ? 11 : viewMonth - 1;
+                        const prevYr = viewMonth === 0 ? viewYear - 1 : viewYear;
+                        selectDate(prevYr, prevMo, dayNum);
+                    });
+                    daysGrid.appendChild(btn);
+                }
+
+                // Current month days
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const iso = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'dp-day';
+                    if (iso === todayIso) btn.classList.add('today');
+                    if (iso === selectedVal) btn.classList.add('selected');
+                    btn.textContent = String(d);
+                    btn.addEventListener('click', () => selectDate(viewYear, viewMonth, d));
+                    daysGrid.appendChild(btn);
+                }
+
+                // Trailing days to complete grid
+                const totalCells = firstDay + daysInMonth;
+                const trailing = (7 - (totalCells % 7)) % 7;
+                for (let d = 1; d <= trailing; d++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'dp-day muted';
+                    btn.textContent = String(d);
+                    btn.addEventListener('click', () => {
+                        const nextMo = viewMonth === 11 ? 0 : viewMonth + 1;
+                        const nextYr = viewMonth === 11 ? viewYear + 1 : viewYear;
+                        selectDate(nextYr, nextMo, d);
+                    });
+                    daysGrid.appendChild(btn);
+                }
+            }
+
+            function selectDate(y, m, d) {
+                if (!activeInput) return;
+                const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                activeInput.value = iso;
+                activeInput.dispatchEvent(new Event('change', { bubbles: true }));
+                closePicker();
+            }
+
+            function positionPopover(targetEl) {
+                const rect = targetEl.getBoundingClientRect();
+                const popW = 300;
+                const popH = 310;
+                let left = rect.left + (rect.width - popW) / 2;
+                left = Math.max(10, Math.min(window.innerWidth - popW - 10, left));
+                let top = rect.bottom + 8;
+                if (top + popH > window.innerHeight - 10 && rect.top - popH - 8 > 10) {
+                    top = rect.top - popH - 8;
+                }
+                popover.style.left = `${left}px`;
+                popover.style.top = `${top}px`;
+            }
+
+            function openPickerFor(inputEl) {
+                if (!inputEl || inputEl.disabled) return;
+                activeInput = inputEl;
+                const parsed = parseIso(inputEl.value);
+                if (parsed) {
+                    viewYear = parsed.getFullYear();
+                    viewMonth = parsed.getMonth();
+                } else {
+                    // Default to previous milestone month if available for convenience
+                    const order = ['registry_date', 'ministry_date', 'ship_date', 'customs_date'];
+                    const idx = order.indexOf(inputEl.id);
+                    let refDate = null;
+                    for (let i = idx - 1; i >= 0; i--) {
+                        refDate = parseIso(document.getElementById(order[i]).value);
+                        if (refDate) break;
+                    }
+                    const base = refDate || new Date();
+                    viewYear = base.getFullYear();
+                    viewMonth = base.getMonth();
+                }
+                renderCalendar();
+                popover.classList.add('open');
+                positionPopover(inputEl.closest('.input-with-clear') || inputEl);
+            }
+
+            function closePicker() {
+                popover.classList.remove('open');
+                activeInput = null;
+            }
+
+            prevBtn.addEventListener('click', () => {
+                if (viewMonth === 0) { viewMonth = 11; viewYear--; }
+                else { viewMonth--; }
+                renderCalendar();
+            });
+            nextBtn.addEventListener('click', () => {
+                if (viewMonth === 11) { viewMonth = 0; viewYear++; }
+                else { viewMonth++; }
+                renderCalendar();
+            });
+            monthSel.addEventListener('change', () => {
+                viewMonth = Number(monthSel.value);
+                renderCalendar();
+            });
+            yearSel.addEventListener('change', () => {
+                viewYear = Number(yearSel.value);
+                renderCalendar();
+            });
+            todayBtn.addEventListener('click', () => {
+                const now = new Date();
+                selectDate(now.getFullYear(), now.getMonth(), now.getDate());
+            });
+            closeBtn.addEventListener('click', closePicker);
+
+            document.querySelectorAll('.date-input').forEach(input => {
+                input.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openPickerFor(input);
+                });
+                input.addEventListener('focus', () => openPickerFor(input));
+            });
+
+            document.querySelectorAll('.cal-trigger-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute('data-cal-for');
+                    const input = document.getElementById(id);
+                    if (input && !input.disabled) {
+                        input.focus();
+                        openPickerFor(input);
+                    }
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!popover.classList.contains('open')) return;
+                if (popover.contains(e.target)) return;
+                if (activeInput && activeInput.closest('.input-with-clear')?.contains(e.target)) return;
+                closePicker();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && popover.classList.contains('open')) {
+                    closePicker();
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                if (popover.classList.contains('open') && activeInput) {
+                    positionPopover(activeInput.closest('.input-with-clear') || activeInput);
+                }
+            });
+        })();
 
         async function loadAutocompleteLists() {
             try {
@@ -711,7 +1216,6 @@
                 }
                 if (sRes.ok) {
                     window.allSuppliers = await sRes.json();
-                    // Populate datalist directly for fast native search when <= 250 items
                     const supList = document.getElementById('supplierList');
                     if (window.allSuppliers.length <= 250) {
                         supList.innerHTML = window.allSuppliers.map(s => `<option value="${s}">`).join('');
@@ -751,72 +1255,16 @@
                     return;
                 }
                 dot.className = 'status-dot ok';
-                text.textContent = h.needs_retrain
-                    ? 'متصل به سرویس (نیازمند بازآموزی برای فعال‌سازی کالیبرasyon جدید)'
-                    : 'متصل به سرویس پیش‌بینی (مدل کالیبرasyon فعال)';
-
-                if (h.needs_retrain) {
-                    showAlert(
-                        'مدل‌های روی دیسک با نسخه قدیمی آموزش دیده‌اند. لطفاً برای فعال‌سازی پیش‌بینی زمان باقی‌مانده و کالیبرasyon CQR، فایل shipdata.csv را در بخش پایین بازآموزی کنید یا اسکریپت train_initial.py را اجرا نمایید.',
-                        'warn'
-                    );
-                }
-
-                const mRes = await fetch(`${API_BASE}/metrics`);
-                if (mRes.ok) {
-                    const m = await mRes.json();
-                    renderMetricsTable(m);
-                }
+                text.textContent = 'متصل به سرویس پیش‌بینی هوشمند';
             } catch {
                 dot.className = 'status-dot err';
-                text.textContent = 'عدم اتصال به سرور پایتون (پورت 8001)';
+                text.textContent = 'عدم اتصال به سرور پیش‌بینی';
             }
         }
 
-        function renderMetricsTable(m, activeStage = null) {
-            const card = document.getElementById('metricsCard');
-            const body = document.getElementById('metricsBody');
-            const meta = document.getElementById('metricsMeta');
-            if (!m || !m.stages) return;
-
-            card.style.display = 'block';
-            meta.textContent = `کل داده‌ها: ${m.n_total ?? '-'} | آموزش: ${m.n_train ?? '-'} | آزمون: ${m.n_test ?? '-'}`;
-
-            const rows = Object.keys(m.stages).sort().map(s => {
-                const st = m.stages[s];
-                const t = st.test || {};
-                const cov = t.coverage_q10_q90 != null ? (t.coverage_q10_q90 * 100).toFixed(1) + '%' : '-';
-                const bRate = t.below_best_rate != null ? (t.below_best_rate * 100).toFixed(1) + '%' : '-';
-                const aRate = t.above_worst_rate != null ? (t.above_worst_rate * 100).toFixed(1) + '%' : '-';
-                const cls = activeStage !== null && String(activeStage) === String(s) ? 'active-row' : '';
-                return `<tr class="${cls}">
-                    <td>${st.stage_label_fa || ('مرحله ' + s)}</td>
-                    <td dir="ltr">${t.r2 ?? '-'}</td>
-                    <td dir="ltr">${t.mae != null ? t.mae + ' d' : '-'}</td>
-                    <td dir="ltr">${cov}</td>
-                    <td dir="ltr">${bRate}</td>
-                    <td dir="ltr">${aRate}</td>
-                </tr>`;
-            }).join('');
-            body.innerHTML = rows;
-            window.lastMetrics = m;
-        }
-
-        document.getElementById('sampleBtn').addEventListener('click', () => {
-            showAlert('');
-            document.getElementById('sap_code').value = '10000183';
-            document.getElementById('country').value = 'CHINA';
-            document.getElementById('supplier').value = 'ORCHID GENERAL TRADING (F.Z.E)';
-            document.getElementById('weight').value = '310000';
-            document.getElementById('registry_date').value = '2024-06-15';
-            document.getElementById('ministry_date').value = '2024-06-28';
-            document.getElementById('ship_date').value = '';
-            document.getElementById('customs_date').value = '';
-            syncMilestoneControls();
-        });
-
         document.querySelectorAll('.clear-field-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const field = btn.getAttribute('data-field');
                 const el = document.getElementById(field);
                 if (!el.disabled) el.value = '';
@@ -829,7 +1277,7 @@
             ['sap_code', 'country', 'supplier', 'weight', 'ministry_date', 'ship_date', 'customs_date'].forEach(id => {
                 document.getElementById(id).value = '';
             });
-            document.getElementById('registry_date').valueAsDate = new Date();
+            document.getElementById('registry_date').value = getTodayIso();
             syncMilestoneControls();
             document.getElementById('resultsPanel').classList.remove('show');
         });
@@ -840,13 +1288,13 @@
             const country = document.getElementById('country').value.trim();
             const supplier = document.getElementById('supplier').value.trim();
             const weight = parseFloat(document.getElementById('weight').value);
-            const registry_date = document.getElementById('registry_date').value;
-            const ministry_date = document.getElementById('ministry_date').value || null;
-            const ship_date = document.getElementById('ship_date').value || null;
-            const customs_date = document.getElementById('customs_date').value || null;
+            const registry_date = document.getElementById('registry_date').value.trim();
+            const ministry_date = document.getElementById('ministry_date').value.trim() || null;
+            const ship_date = document.getElementById('ship_date').value.trim() || null;
+            const customs_date = document.getElementById('customs_date').value.trim() || null;
 
             if (!sap_code || !country || !supplier) {
-                showAlert('لطفاً کد کالا (SAP)، کشور Principle و نام تأمین‌کننده را وارد کنید.');
+                showAlert('لطفاً کد کالا (SAP)، کشور مبدأ و نام تأمین‌کننده را وارد کنید.');
                 return;
             }
             if (!Number.isFinite(weight) || weight <= 0) {
@@ -856,6 +1304,19 @@
             if (!registry_date) {
                 showAlert('لطفاً تاریخ ثبت سیستم را انتخاب کنید.');
                 return;
+            }
+
+            const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
+            for (const [label, val] of [
+                ['تاریخ ثبت سیستم', registry_date],
+                ['تاریخ مجوز وزارتخانه', ministry_date],
+                ['تاریخ حرکت کشتی', ship_date],
+                ['تاریخ ورود به گمرک', customs_date],
+            ]) {
+                if (val && !isoPattern.test(val)) {
+                    showAlert(`فرمت ${label} باید به‌صورت YYYY-MM-DD باشد (مثلاً 2024-06-15).`);
+                    return;
+                }
             }
 
             const dates = [
@@ -906,7 +1367,6 @@
                 document.getElementById('stageBannerSub').textContent =
                     `زمان سپری‌شده: ${data.elapsed_days} روز`;
 
-                // Range bar positioning (RTL: right is 0%)
                 const scaleMax = Math.max(data.worst_case_days * 1.1, 1);
                 const pctElapsed = Math.min(100, (data.elapsed_days / scaleMax) * 100);
                 const pctBest = Math.min(100, (data.best_case_days / scaleMax) * 100);
@@ -928,11 +1388,7 @@
                 document.getElementById('intelTrend').textContent =
                     typeof data.recent_trend === 'number' ? `${data.recent_trend} روز` : (data.recent_trend || '-');
                 document.getElementById('intelStageAcc').textContent =
-                    `R²=${data.stage_test_r2 ?? '-'} | MAE=${data.stage_test_mae ?? '-'} روز`;
-
-                if (window.lastMetrics) {
-                    renderMetricsTable(window.lastMetrics, data.stage);
-                }
+                    data.stage_test_mae != null ? `${data.stage_test_mae} روز` : '-';
 
                 document.getElementById('resultsPanel').classList.add('show');
             } catch (err) {
@@ -954,19 +1410,22 @@
             showAlert('');
             const form = new FormData();
             form.append('file', fileInput.files[0]);
-            form.append('use_tuning', document.getElementById('useTuningCheck').checked ? 'true' : 'false');
+            form.append('use_tuning', 'true');
 
             btn.disabled = true;
             btn.textContent = 'در حال بازآموزی...';
-            status.textContent = 'در حال اجرای بازآموزی چندمرحله‌ای، بهینه‌سازی ژنتیک و کالیبرasyon CQR (ممکن است ۳۰ تا ۶۰ ثانیه زمان ببرد)...';
+            status.textContent = 'در حال اجرای بازآموزی چندمرحله‌ای و کالیبراسیون...';
 
             try {
                 const res = await fetch(`${API_BASE}/retrain`, { method: 'POST', body: form });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok) throw new Error(parseApiError(data, res.status));
 
-                status.textContent = `بازآموزی با موفقیت انجام شد. تعداد کل: ${data.n_total} | R² مرحله ۰: ${data.benchmark_r2}`;
-                showAlert('مدل‌های جدید با منطق زمان باقی‌مانده و کالیبرasyon CQR با موفقیت جایگزین شدند.', 'success');
+                const s0Mae = data.stages && data.stages['0'] && data.stages['0'].test ? data.stages['0'].test.mae : null;
+                status.textContent = s0Mae != null
+                    ? `بازآموزی با موفقیت انجام شد. تعداد کل: ${data.n_total} | خطای میانگین (MAE) مرحله ۰: ${s0Mae} روز`
+                    : `بازآموزی با موفقیت انجام شد. تعداد کل: ${data.n_total}`;
+                showAlert('مدل‌های جدید با منطق زمان باقی‌مانده و کالیبراسیون جدید با موفقیت جایگزین شدند.', 'success');
                 await Promise.all([loadAutocompleteLists(), checkHealthAndMetrics()]);
             } catch (err) {
                 status.textContent = 'خطا: ' + err.message;
