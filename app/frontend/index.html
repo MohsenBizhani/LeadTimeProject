@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پلتفرم پیش‌بینی زمان تحویل هوشمند</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0f1012;
+            --surface: #1a1c20;
+            --surface-hover: #24272c;
+            --ink: #f3f4f6;
+            --muted: #9ca3af;
+            --accent: #f97316;
+            --accent-glow: rgba(249, 115, 22, 0.25);
+            --border: #2d3139;
+            --ok: #22c55e;
+            --warn: #eab308;
+            --err: #ef4444;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--ink);
+            font-family: 'Vazirmatn', sans-serif;
+            line-height: 1.7;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
+        header h1 {
+            font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            color: var(--ink);
+        }
+        header p {
+            color: var(--muted);
+            font-size: 1.02rem;
+            max-width: 650px;
+            margin: 0 auto 1rem;
+        }
+        .status-bar {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0.35rem 1rem;
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--warn);
+        }
+        .status-dot.ok { background: var(--ok); box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
+        .status-dot.err { background: var(--err); box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+
+        .alert-banner {
+            display: none;
+            padding: 0.9rem 1.2rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+            border: 1px solid;
+        }
+        .alert-banner.show { display: block; }
+        .alert-banner.error {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.45);
+            color: #fecaca;
+        }
+        .alert-banner.warn {
+            background: rgba(234, 179, 8, 0.12);
+            border-color: rgba(234, 179, 8, 0.45);
+            color: #fef08a;
+        }
+        .alert-banner.success {
+            background: rgba(34, 197, 94, 0.12);
+            border-color: rgba(34, 197, 94, 0.45);
+            color: #bbf7d0;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.75rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+        .stage-chip {
+            background: rgba(249, 115, 22, 0.14);
+            color: #fdba74;
+            border: 1px solid rgba(249, 115, 22, 0.35);
+            border-radius: 999px;
+            padding: 0.25rem 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 1.15rem;
+        }
+        .feature-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .feature-group label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+        .feature-group small.hint {
+            font-size: 0.78rem;
+            color: #6b7280;
+        }
+        .input-with-clear {
+            display: flex;
+            align-items: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        .input-with-clear:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .input-with-clear.disabled {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+        .input-with-clear input {
+            flex: 1;
+            min-width: 0;
+            height: 46px;
+            padding: 0.5rem 0.85rem;
+            background: transparent;
+            border: none;
+            color: var(--ink);
+            font-family: inherit;
+            font-size: 0.98rem;
+            text-align: center;
+            direction: ltr;
+        }
+        .input-with-clear input:focus {
+            outline: none;
+        }
+        /* Fix dark calendar picker icon on dark theme */
+        input[type="date"] {
+            color-scheme: dark;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1) brightness(1.35);
+            opacity: 0.9;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 6px;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+            background-color: rgba(249, 115, 22, 0.22);
+        }
+        .clear-field-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: 0 0.75rem;
+            height: 46px;
+            transition: color 0.2s, background-color 0.2s;
+        }
+        .clear-field-btn:hover {
+            color: var(--accent);
+            background: var(--surface-hover);
+        }
+        .divider-title {
+            grid-column: 1 / -1;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--ink);
+            margin-top: 0.75rem;
+            padding-top: 1.15rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .divider-title span {
+            font-weight: 400;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .btn-container {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.85rem;
+            margin-top: 0.75rem;
+        }
+        .btn {
+            flex: 1;
+            min-width: 150px;
+            height: 46px;
+            padding: 0 1rem;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.96rem;
+            cursor: pointer;
+            transition: filter 0.2s, transform 0.1s, opacity 0.2s;
+        }
+        .btn:hover:not(:disabled) { filter: brightness(1.1); }
+        .btn:active:not(:disabled) { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-secondary {
+            background: var(--surface-hover);
+            color: var(--ink);
+            border: 1px solid var(--border);
+        }
+
+        #resultsPanel {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        #resultsPanel.show { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stage-banner {
+            background: var(--bg);
+            border-right: 4px solid var(--accent);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+        .stage-banner span {
+            color: var(--muted);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.15rem;
+            text-align: center;
+        }
+        .stat-box.highlight {
+            border-color: var(--accent);
+            background: rgba(249, 115, 22, 0.06);
+        }
+        .stat-box.optimistic { border-color: rgba(34, 197, 94, 0.45); }
+        .stat-box.pessimistic { border-color: rgba(239, 68, 68, 0.4); }
+        .stat-label {
+            font-size: 0.88rem;
+            color: var(--muted);
+            margin-bottom: 0.35rem;
+        }
+        .stat-val {
+            font-size: 1.95rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+        .stat-val small {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--muted);
+            margin-right: 0.25rem;
+        }
+        .stat-date {
+            margin-top: 0.35rem;
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .range-visual {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .range-bar-track {
+            position: relative;
+            height: 12px;
+            background: #262930;
+            border-radius: 999px;
+            margin: 0.85rem 0 0.5rem;
+            overflow: hidden;
+        }
+        .range-bar-elapsed {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            background: #64748b;
+        }
+        .range-bar-interval {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, #ef4444, #f97316, #22c55e);
+            opacity: 0.85;
+            border-radius: 999px;
+        }
+        .range-bar-expected {
+            position: absolute;
+            top: -2px;
+            bottom: -2px;
+            width: 4px;
+            background: #ffffff;
+            border-radius: 2px;
+        }
+        .supplier-intel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-top: 1.25rem;
+            font-size: 0.9rem;
+        }
+        .intel-item span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+        .intel-item strong { color: var(--ink); }
+
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            margin-top: 0.75rem;
+        }
+        .metrics-table th, .metrics-table td {
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+        .metrics-table th {
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .metrics-table tr.active-row {
+            background: rgba(249, 115, 22, 0.08);
+        }
+
+        footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-top: 2.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>پلتفرم پیش‌بینی زمان تحویل</h1>
+            <p>تحلیل هوشمند و پیش‌رونده لجستیک زنجیره تأمین با کالیبرasyon بازه‌های خوش‌بینانه، محتمل و بدبینانه</p>
+            <div class="status-bar">
+                <span class="status-dot" id="serverDot"></span>
+                <span id="serverStatusText">در حال بررسی اتصال سرور...</span>
+            </div>
+        </header>
+
+        <div id="globalAlert" class="alert-banner"></div>
+
+        <!-- Input Form Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="section-title">مشخصات محموله و مراحل سفارش</h2>
+                <span class="stage-chip" id="liveStageChip">مرحله فعلی فرم: لحظه ثبت سفارش (مرحله ۰)</span>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-group">
+                    <label for="sap_code">کد کالا (SAP)</label>
+                    <div class="input-with-clear">
+                        <input type="text" id="sap_code" list="sapList" dir="ltr" placeholder="مثلاً 10000183">
+                        <datalist id="sapList"></datalist>
+                        <button type="button" class="clear-field-btn" data-field="sap_code" title="پاک کردن">×</button>
+                    </div>
+                </div>
+
+                <div class="feature-group">
+                    <label for="country">کشور Principle</label>
+                    <div class="input-with-clear">
+                        <input type="text" id="country" list="countryList" dir="ltr" placeholder="انتخاب یا تایپ کشور...">
+                        <datalist id="countryList"></datalist>
+                        <button type="button" class="clear-field-btn" data-field="country" title="پاک کردن">×</button>
+                    </div>
+                </div>
+
+                <div class="feature-group">
+                    <label for="supplier">تأمین‌کننده</label>
+                    <div class="input-with-clear">
+                        <input type="text" id="supplier" list="supplierList" dir="ltr" placeholder="انتخاب یا تایپ نام تأمین‌کننده...">
+                        <datalist id="supplierList"></datalist>
+                        <button type="button" class="clear-field-btn" data-field="supplier" title="پاک کردن">×</button>
+                    </div>
+                </div>
+
+                <div class="feature-group">
+                    <label for="weight">وزن (کیلوگرم)</label>
+                    <div class="input-with-clear">
+                        <input type="number" id="weight" min="1" step="any" dir="ltr" placeholder="مثلاً 24000">
+                        <button type="button" class="clear-field-btn" data-field="weight" title="پاک کردن">×</button>
+                    </div>
+                </div>
+
+                <div class="feature-group">
+                    <label for="registry_date">تاریخ ثبت سیستم</label>
+                    <div class="input-with-clear">
+                        <input type="date" id="registry_date" dir="ltr">
+                        <button type="button" class="clear-field-btn" data-field="registry_date" title="پاک کردن">×</button>
+                    </div>
+                </div>
+
+                <div class="divider-title">
+                    <div>تاریخ مراحل انجام‌شده (اختیاری جهت افزایش دقت)</div>
+                    <span>ترتیب زمانی باید از راست به چپ تکمیل شود</span>
+                </div>
+
+                <div class="feature-group">
+                    <label for="ministry_date">۱. تاریخ مجوز وزارتخانه</label>
+                    <div class="input-with-clear" id="wrap_ministry_date">
+                        <input type="date" id="ministry_date" dir="ltr">
+                        <button type="button" class="clear-field-btn" data-field="ministry_date" title="پاک کردن">×</button>
+                    </div>
+                </div>
+
+                <div class="feature-group">
+                    <label for="ship_date">۲. تاریخ حرکت کشتی</label>
+                    <div class="input-with-clear disabled" id="wrap_ship_date">
+                        <input type="date" id="ship_date" dir="ltr" disabled>
+                        <button type="button" class="clear-field-btn" data-field="ship_date" title="پاک کردن">×</button>
+                    </div>
+                    <small class="hint">پس از ثبت تاریخ مجوز وزارتخانه فعال می‌شود</small>
+                </div>
+
+                <div class="feature-group">
+                    <label for="customs_date">۳. تاریخ ورود به گمرک</label>
+                    <div class="input-with-clear disabled" id="wrap_customs_date">
+                        <input type="date" id="customs_date" dir="ltr" disabled>
+                        <button type="button" class="clear-field-btn" data-field="customs_date" title="پاک کردن">×</button>
+                    </div>
+                    <small class="hint">پس از ثبت تاریخ حرکت کشتی فعال می‌شود</small>
+                </div>
+
+                <div class="btn-container">
+                    <button type="button" id="sampleBtn" class="btn btn-secondary">بارگذاری سفارش نمونه</button>
+                    <button type="button" id="clearAllBtn" class="btn btn-secondary">پاک کردن همه</button>
+                    <button type="button" id="predictBtn" class="btn btn-primary">محاسبه پیش‌بینی و بازه خطا</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Card -->
+        <div class="card" id="resultsPanel">
+            <div class="stage-banner">
+                <div id="stageBannerText">مرحله محاسبه: -</div>
+                <span id="stageBannerSub">زمان سپری‌شده: -</span>
+            </div>
+
+            <div class="range-visual">
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--muted);">
+                    <span>شروع (روز ۰)</span>
+                    <span id="rangeSummaryLabel">بازه تحویل پیش‌بینی‌شده</span>
+                </div>
+                <div class="range-bar-track">
+                    <div class="range-bar-elapsed" id="barElapsed"></div>
+                    <div class="range-bar-interval" id="barInterval"></div>
+                    <div class="range-bar-expected" id="barExpected"></div>
+                </div>
+            </div>
+
+            <h3 class="section-title" style="font-size: 1.08rem; margin-bottom: 0.9rem;">زمان کل تحویل (از ثبت سفارش تا کارخانه)</h3>
+            <div class="stats-grid">
+                <div class="stat-box optimistic">
+                    <div class="stat-label">بهترین سناریو (خوش‌بینانه)</div>
+                    <div class="stat-val" id="resBest">-<small>روز</small></div>
+                    <div class="stat-date" id="resBestDate">-</div>
+                </div>
+                <div class="stat-box highlight">
+                    <div class="stat-label">پیش‌بینی محتمل (واقع‌بینانه)</div>
+                    <div class="stat-val" id="resExpected">-<small>روز</small></div>
+                    <div class="stat-date" id="resExpectedDate">-</div>
+                </div>
+                <div class="stat-box pessimistic">
+                    <div class="stat-label">بدترین سناریو (ریسک تاخیر)</div>
+                    <div class="stat-val" id="resWorst">-<small>روز</small></div>
+                    <div class="stat-date" id="resWorstDate">-</div>
+                </div>
+            </div>
+
+            <h3 class="section-title" style="font-size: 1.08rem; margin-bottom: 0.9rem;">زمان باقی‌مانده تا تحویل نهایی</h3>
+            <div class="stats-grid" style="margin-bottom: 0;">
+                <div class="stat-box optimistic">
+                    <div class="stat-label">حداقل باقی‌مانده</div>
+                    <div class="stat-val" id="remBest">-<small>روز</small></div>
+                </div>
+                <div class="stat-box highlight">
+                    <div class="stat-label">باقی‌مانده محتمل</div>
+                    <div class="stat-val" id="remExpected">-<small>روز</small></div>
+                </div>
+                <div class="stat-box pessimistic">
+                    <div class="stat-label">حداکثر باقی‌مانده (ریسک)</div>
+                    <div class="stat-val" id="remWorst">-<small>روز</small></div>
+                </div>
+            </div>
+
+            <div class="supplier-intel">
+                <div class="intel-item"><span>وضعیت تأمین‌کننده</span><strong id="intelTier">-</strong></div>
+                <div class="intel-item"><span>تعداد سوابق تکمیل‌شده</span><strong id="intelCount">-</strong></div>
+                <div class="intel-item"><span>میانگین تاریخی تأمین‌کننده</span><strong id="intelMean">-</strong></div>
+                <div class="intel-item"><span>روند ۳ سفارش اخیر</span><strong id="intelTrend">-</strong></div>
+                <div class="intel-item"><span>دقت مرحله فعلی (R² / MAE)</span><strong id="intelStageAcc">-</strong></div>
+            </div>
+        </div>
+
+        <!-- Model Metrics Card -->
+        <div class="card" id="metricsCard">
+            <div class="card-header">
+                <h3 class="section-title" style="font-size: 1.08rem;">ارزیابی دقت و کالیبرasyon مدل روی داده آزمون</h3>
+                <span id="metricsMeta" style="font-size:0.84rem; color:var(--muted);"></span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="metrics-table">
+                    <thead>
+                        <tr>
+                            <th>مرحله</th>
+                            <th>R²</th>
+                            <th>خطای میانگین (MAE)</th>
+                            <th>پوشش بازه</th>
+                            <th>نرخ کمتر از خوش‌بینانه</th>
+                            <th>نرخ بیشتر از بدبینانه</th>
+                        </tr>
+                    </thead>
+                    <tbody id="metricsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Retrain Card -->
+        <div class="card">
+            <h3 class="section-title" style="font-size: 1.1rem; margin-bottom: 0.4rem;">به‌روزرسانی و بازآموزی مدل</h3>
+            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                جهت به‌روزرسانی مدل‌ها با الگوریتم ژنتیک، کالیبرasyon CQR و به‌روزرسانی لیست‌ها، فایل CSV جدید را بارگذاری کنید.
+            </p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                <input type="file" id="datasetFile" accept=".csv" style="flex: 1; min-width:220px; padding: 0.55rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--ink);">
+                <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem; color:var(--muted); cursor:pointer;">
+                    <input type="checkbox" id="useTuningCheck" checked> بهینه‌سازی ژنتیک
+                </label>
+                <button type="button" id="retrainBtn" class="btn btn-primary" style="max-width: 210px;">بازآموزی مدل</button>
+            </div>
+            <div id="retrainStatus" style="margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem;"></div>
+        </div>
+
+        <footer>
+            <p>پلتفرم پیش‌بینی زمان تحویل &copy; <span id="year"></span></p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8001';
+        document.getElementById('year').textContent = new Date().getFullYear();
+        document.getElementById('registry_date').valueAsDate = new Date();
+
+        function showAlert(msg, type = 'error') {
+            const el = document.getElementById('globalAlert');
+            if (!msg) {
+                el.className = 'alert-banner';
+                el.textContent = '';
+                return;
+            }
+            el.className = 'alert-banner show ' + type;
+            el.textContent = msg;
+        }
+
+        function parseApiError(errBody, statusCode) {
+            if (!errBody) return 'HTTP ' + statusCode;
+            if (typeof errBody.detail === 'string') return errBody.detail;
+            if (Array.isArray(errBody.detail)) {
+                return errBody.detail.map(e => `${(e.loc || []).slice(-1)[0] || 'فیلد'}: ${e.msg}`).join(' | ');
+            }
+            return 'HTTP ' + statusCode;
+        }
+
+        function formatDatePair(isoStr) {
+            if (!isoStr) return '-';
+            const d = new Date(isoStr + 'T00:00:00');
+            if (Number.isNaN(d.getTime())) return isoStr;
+            try {
+                const fa = new Intl.DateTimeFormat('fa-IR', {
+                    year: 'numeric', month: '2-digit', day: '2-digit'
+                }).format(d);
+                return `${fa} (${isoStr})`;
+            } catch {
+                return isoStr;
+            }
+        }
+
+        function syncMilestoneControls() {
+            const minVal = document.getElementById('ministry_date').value;
+            const shipEl = document.getElementById('ship_date');
+            const shipWrap = document.getElementById('wrap_ship_date');
+            const custEl = document.getElementById('customs_date');
+            const custWrap = document.getElementById('wrap_customs_date');
+
+            if (!minVal) {
+                shipEl.value = '';
+                shipEl.disabled = true;
+                shipWrap.classList.add('disabled');
+            } else {
+                shipEl.disabled = false;
+                shipWrap.classList.remove('disabled');
+            }
+
+            if (!shipEl.value) {
+                custEl.value = '';
+                custEl.disabled = true;
+                custWrap.classList.add('disabled');
+            } else {
+                custEl.disabled = false;
+                custWrap.classList.remove('disabled');
+            }
+
+            const chip = document.getElementById('liveStageChip');
+            if (custEl.value) chip.textContent = 'مرحله فعلی فرم: پس از ورود به گمرک مقصد (مرحله ۳)';
+            else if (shipEl.value) chip.textContent = 'مرحله فعلی فرم: پس از حرکت کشتی از princípio (مرحله ۲)';
+            else if (minVal) chip.textContent = 'مرحله فعلی فرم: پس از مجوز وزارتخانه (مرحله ۱)';
+            else chip.textContent = 'مرحله فعلی فرم: لحظه ثبت سفارش (مرحله ۰)';
+        }
+
+        ['ministry_date', 'ship_date', 'customs_date'].forEach(id => {
+            document.getElementById(id).addEventListener('change', syncMilestoneControls);
+        });
+
+        async function loadAutocompleteLists() {
+            try {
+                const [cRes, sRes, sapRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/countries`),
+                    fetch(`${API_BASE}/api/suppliers`),
+                    fetch(`${API_BASE}/api/sap-codes`)
+                ]);
+
+                if (cRes.ok) {
+                    const countries = await cRes.json();
+                    document.getElementById('countryList').innerHTML =
+                        countries.map(c => `<option value="${c}">`).join('');
+                }
+                if (sRes.ok) {
+                    window.allSuppliers = await sRes.json();
+                    // Populate datalist directly for fast native search when <= 250 items
+                    const supList = document.getElementById('supplierList');
+                    if (window.allSuppliers.length <= 250) {
+                        supList.innerHTML = window.allSuppliers.map(s => `<option value="${s}">`).join('');
+                    }
+                }
+                if (sapRes.ok) {
+                    const saps = await sapRes.json();
+                    document.getElementById('sapList').innerHTML =
+                        saps.map(x => `<option value="${x}">`).join('');
+                }
+            } catch (err) {
+                console.error('Could not load autocomplete lists:', err);
+            }
+        }
+
+        document.getElementById('supplier').addEventListener('input', (e) => {
+            if (!window.allSuppliers || window.allSuppliers.length <= 250) return;
+            const query = e.target.value.trim().toUpperCase();
+            const supList = document.getElementById('supplierList');
+            if (query.length >= 1) {
+                const matches = window.allSuppliers.filter(s => s.includes(query)).slice(0, 25);
+                supList.innerHTML = matches.map(s => `<option value="${s}">`).join('');
+            } else {
+                supList.innerHTML = '';
+            }
+        });
+
+        async function checkHealthAndMetrics() {
+            const dot = document.getElementById('serverDot');
+            const text = document.getElementById('serverStatusText');
+            try {
+                const hRes = await fetch(`${API_BASE}/health`);
+                const h = await hRes.json();
+                if (!hRes.ok || !h.models_loaded) {
+                    dot.className = 'status-dot err';
+                    text.textContent = 'سرویس متصل است اما مدل‌ها بارگذاری نشده‌اند';
+                    return;
+                }
+                dot.className = 'status-dot ok';
+                text.textContent = h.needs_retrain
+                    ? 'متصل به سرویس (نیازمند بازآموزی برای فعال‌سازی کالیبرasyon جدید)'
+                    : 'متصل به سرویس پیش‌بینی (مدل کالیبرasyon فعال)';
+
+                if (h.needs_retrain) {
+                    showAlert(
+                        'مدل‌های روی دیسک با نسخه قدیمی آموزش دیده‌اند. لطفاً برای فعال‌سازی پیش‌بینی زمان باقی‌مانده و کالیبرasyon CQR، فایل shipdata.csv را در بخش پایین بازآموزی کنید یا اسکریپت train_initial.py را اجرا نمایید.',
+                        'warn'
+                    );
+                }
+
+                const mRes = await fetch(`${API_BASE}/metrics`);
+                if (mRes.ok) {
+                    const m = await mRes.json();
+                    renderMetricsTable(m);
+                }
+            } catch {
+                dot.className = 'status-dot err';
+                text.textContent = 'عدم اتصال به سرور پایتون (پورت 8001)';
+            }
+        }
+
+        function renderMetricsTable(m, activeStage = null) {
+            const card = document.getElementById('metricsCard');
+            const body = document.getElementById('metricsBody');
+            const meta = document.getElementById('metricsMeta');
+            if (!m || !m.stages) return;
+
+            card.style.display = 'block';
+            meta.textContent = `کل داده‌ها: ${m.n_total ?? '-'} | آموزش: ${m.n_train ?? '-'} | آزمون: ${m.n_test ?? '-'}`;
+
+            const rows = Object.keys(m.stages).sort().map(s => {
+                const st = m.stages[s];
+                const t = st.test || {};
+                const cov = t.coverage_q10_q90 != null ? (t.coverage_q10_q90 * 100).toFixed(1) + '%' : '-';
+                const bRate = t.below_best_rate != null ? (t.below_best_rate * 100).toFixed(1) + '%' : '-';
+                const aRate = t.above_worst_rate != null ? (t.above_worst_rate * 100).toFixed(1) + '%' : '-';
+                const cls = activeStage !== null && String(activeStage) === String(s) ? 'active-row' : '';
+                return `<tr class="${cls}">
+                    <td>${st.stage_label_fa || ('مرحله ' + s)}</td>
+                    <td dir="ltr">${t.r2 ?? '-'}</td>
+                    <td dir="ltr">${t.mae != null ? t.mae + ' d' : '-'}</td>
+                    <td dir="ltr">${cov}</td>
+                    <td dir="ltr">${bRate}</td>
+                    <td dir="ltr">${aRate}</td>
+                </tr>`;
+            }).join('');
+            body.innerHTML = rows;
+            window.lastMetrics = m;
+        }
+
+        document.getElementById('sampleBtn').addEventListener('click', () => {
+            showAlert('');
+            document.getElementById('sap_code').value = '10000183';
+            document.getElementById('country').value = 'CHINA';
+            document.getElementById('supplier').value = 'ORCHID GENERAL TRADING (F.Z.E)';
+            document.getElementById('weight').value = '310000';
+            document.getElementById('registry_date').value = '2024-06-15';
+            document.getElementById('ministry_date').value = '2024-06-28';
+            document.getElementById('ship_date').value = '';
+            document.getElementById('customs_date').value = '';
+            syncMilestoneControls();
+        });
+
+        document.querySelectorAll('.clear-field-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const field = btn.getAttribute('data-field');
+                const el = document.getElementById(field);
+                if (!el.disabled) el.value = '';
+                syncMilestoneControls();
+            });
+        });
+
+        document.getElementById('clearAllBtn').addEventListener('click', () => {
+            showAlert('');
+            ['sap_code', 'country', 'supplier', 'weight', 'ministry_date', 'ship_date', 'customs_date'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('registry_date').valueAsDate = new Date();
+            syncMilestoneControls();
+            document.getElementById('resultsPanel').classList.remove('show');
+        });
+
+        document.getElementById('predictBtn').addEventListener('click', async () => {
+            showAlert('');
+            const sap_code = document.getElementById('sap_code').value.trim();
+            const country = document.getElementById('country').value.trim();
+            const supplier = document.getElementById('supplier').value.trim();
+            const weight = parseFloat(document.getElementById('weight').value);
+            const registry_date = document.getElementById('registry_date').value;
+            const ministry_date = document.getElementById('ministry_date').value || null;
+            const ship_date = document.getElementById('ship_date').value || null;
+            const customs_date = document.getElementById('customs_date').value || null;
+
+            if (!sap_code || !country || !supplier) {
+                showAlert('لطفاً کد کالا (SAP)، کشور Principle و نام تأمین‌کننده را وارد کنید.');
+                return;
+            }
+            if (!Number.isFinite(weight) || weight <= 0) {
+                showAlert('لطفاً وزن محموله را به‌صورت عددی بزرگتر از صفر وارد کنید.');
+                return;
+            }
+            if (!registry_date) {
+                showAlert('لطفاً تاریخ ثبت سیستم را انتخاب کنید.');
+                return;
+            }
+
+            const dates = [
+                ['تاریخ ثبت سیستم', registry_date],
+                ['تاریخ مجوز وزارتخانه', ministry_date],
+                ['تاریخ حرکت کشتی', ship_date],
+                ['تاریخ ورود به گمرک', customs_date],
+            ].filter(x => x[1]);
+            for (let i = 1; i < dates.length; i++) {
+                if (dates[i][1] < dates[i - 1][1]) {
+                    showAlert(`${dates[i][0]} نمی‌تواند قبل از ${dates[i - 1][0]} باشد.`);
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('predictBtn');
+            btn.disabled = true;
+            btn.textContent = 'در حال محاسبه...';
+
+            try {
+                const response = await fetch(`${API_BASE}/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sap_code, country, supplier, weight,
+                        registry_date, ministry_date, ship_date, customs_date
+                    })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(parseApiError(data, response.status));
+                }
+
+                document.getElementById('resBest').innerHTML = data.best_case_days + '<small>روز</small>';
+                document.getElementById('resExpected').innerHTML = data.expected_days + '<small>روز</small>';
+                document.getElementById('resWorst').innerHTML = data.worst_case_days + '<small>روز</small>';
+
+                document.getElementById('resBestDate').textContent = formatDatePair(data.estimated_best_date);
+                document.getElementById('resExpectedDate').textContent = formatDatePair(data.estimated_expected_date);
+                document.getElementById('resWorstDate').textContent = formatDatePair(data.estimated_worst_date);
+
+                document.getElementById('remBest').innerHTML = data.remaining_best_days + '<small>روز</small>';
+                document.getElementById('remExpected').innerHTML = data.remaining_expected_days + '<small>روز</small>';
+                document.getElementById('remWorst').innerHTML = data.remaining_worst_days + '<small>روز</small>';
+
+                document.getElementById('stageBannerText').textContent =
+                    `مرحله محاسبه: ${data.stage_label_fa} (مرحله ${data.stage})`;
+                document.getElementById('stageBannerSub').textContent =
+                    `زمان سپری‌شده: ${data.elapsed_days} روز`;
+
+                // Range bar positioning (RTL: right is 0%)
+                const scaleMax = Math.max(data.worst_case_days * 1.1, 1);
+                const pctElapsed = Math.min(100, (data.elapsed_days / scaleMax) * 100);
+                const pctBest = Math.min(100, (data.best_case_days / scaleMax) * 100);
+                const pctExp = Math.min(100, (data.expected_days / scaleMax) * 100);
+                const pctWorst = Math.min(100, (data.worst_case_days / scaleMax) * 100);
+
+                document.getElementById('barElapsed').style.width = pctElapsed + '%';
+                document.getElementById('barInterval').style.right = pctBest + '%';
+                document.getElementById('barInterval').style.width = Math.max(2, pctWorst - pctBest) + '%';
+                document.getElementById('barExpected').style.right = `calc(${pctExp}% - 2px)`;
+                document.getElementById('rangeSummaryLabel').textContent =
+                    `بازه محتمل: ${data.best_case_days} تا ${data.worst_case_days} روز (محتمل‌ترین: ${data.expected_days} روز)`;
+
+                document.getElementById('intelTier').textContent = data.supplier_tier_name || '-';
+                document.getElementById('intelCount').textContent =
+                    data.supplier_order_count != null ? `${data.supplier_order_count} سفارش` : '-';
+                document.getElementById('intelMean').textContent =
+                    typeof data.historical_mean === 'number' ? `${data.historical_mean} روز` : (data.historical_mean || '-');
+                document.getElementById('intelTrend').textContent =
+                    typeof data.recent_trend === 'number' ? `${data.recent_trend} روز` : (data.recent_trend || '-');
+                document.getElementById('intelStageAcc').textContent =
+                    `R²=${data.stage_test_r2 ?? '-'} | MAE=${data.stage_test_mae ?? '-'} روز`;
+
+                if (window.lastMetrics) {
+                    renderMetricsTable(window.lastMetrics, data.stage);
+                }
+
+                document.getElementById('resultsPanel').classList.add('show');
+            } catch (err) {
+                showAlert('خطا در پیش‌بینی: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'محاسبه پیش‌بینی و بازه خطا';
+            }
+        });
+
+        document.getElementById('retrainBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('datasetFile');
+            const status = document.getElementById('retrainStatus');
+            const btn = document.getElementById('retrainBtn');
+            if (!fileInput.files.length) {
+                showAlert('لطفاً ابتدا یک فایل CSV انتخاب کنید.');
+                return;
+            }
+            showAlert('');
+            const form = new FormData();
+            form.append('file', fileInput.files[0]);
+            form.append('use_tuning', document.getElementById('useTuningCheck').checked ? 'true' : 'false');
+
+            btn.disabled = true;
+            btn.textContent = 'در حال بازآموزی...';
+            status.textContent = 'در حال اجرای بازآموزی چندمرحله‌ای، بهینه‌سازی ژنتیک و کالیبرasyon CQR (ممکن است ۳۰ تا ۶۰ ثانیه زمان ببرد)...';
+
+            try {
+                const res = await fetch(`${API_BASE}/retrain`, { method: 'POST', body: form });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(parseApiError(data, res.status));
+
+                status.textContent = `بازآموزی با موفقیت انجام شد. تعداد کل: ${data.n_total} | R² مرحله ۰: ${data.benchmark_r2}`;
+                showAlert('مدل‌های جدید با منطق زمان باقی‌مانده و کالیبرasyon CQR با موفقیت جایگزین شدند.', 'success');
+                await Promise.all([loadAutocompleteLists(), checkHealthAndMetrics()]);
+            } catch (err) {
+                status.textContent = 'خطا: ' + err.message;
+                showAlert('خطا در بازآموزی: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'بازآموزی مدل';
+            }
+        });
+
+        syncMilestoneControls();
+        loadAutocompleteLists();
+        checkHealthAndMetrics();
+    </script>
+</body>
+</html>

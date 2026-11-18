@@ -1,0 +1,284 @@
+{
+  "protocol": "chronological split by registery-date, causal remaining-days target, GA hyperparameter tuning, asymmetric rolling-time CQR calibration",
+  "target_mode": "remaining_days",
+  "n_total": 590,
+  "n_train": 472,
+  "n_test": 118,
+  "split_date": "2024-02-07",
+  "train_range": [
+    "2021-01-23",
+    "2024-02-05"
+  ],
+  "test_range": [
+    "2024-02-07",
+    "2025-08-04"
+  ],
+  "params": {
+    "0": {
+      "iterations": 250,
+      "learning_rate": 0.0422,
+      "depth": 6,
+      "l2_leaf_reg": 14.12,
+      "random_seed": 42
+    },
+    "1": {
+      "iterations": 250,
+      "learning_rate": 0.0422,
+      "depth": 6,
+      "l2_leaf_reg": 14.12,
+      "random_seed": 42
+    },
+    "2": {
+      "iterations": 150,
+      "learning_rate": 0.0666,
+      "depth": 6,
+      "l2_leaf_reg": 4.0,
+      "random_seed": 42
+    },
+    "3": {
+      "iterations": 350,
+      "learning_rate": 0.0257,
+      "depth": 3,
+      "l2_leaf_reg": 14.71,
+      "random_seed": 42
+    }
+  },
+  "stages": {
+    "0": {
+      "stage": 0,
+      "stage_name": "order_registration_day_zero",
+      "stage_label_fa": "لحظه ثبت سفارش",
+      "feature_cols": [
+        "weight",
+        "log_weight",
+        "month",
+        "reg_doy_sin",
+        "reg_doy_cos",
+        "is_winter",
+        "is_peak",
+        "supplier_count",
+        "supplier_tier",
+        "supplier_hist_mean",
+        "recent_3_mean",
+        "country_hist_mean",
+        "sap_hist_mean",
+        "global_recent_mean",
+        "country_clean",
+        "supplier_clean",
+        "sap_code_clean"
+      ],
+      "n_features": 17,
+      "calibration": {
+        "delta_low": 29.21,
+        "delta_high": 17.68
+      },
+      "params": {
+        "iterations": 250,
+        "learning_rate": 0.0422,
+        "depth": 6,
+        "l2_leaf_reg": 14.12,
+        "random_seed": 42
+      },
+      "test": {
+        "n": 118,
+        "mae": 22.48,
+        "rmse": 27.2,
+        "r2": 0.1065,
+        "mape": 17.45,
+        "medae": 20.45,
+        "coverage_q10_q90": 0.7627,
+        "below_best_rate": 0.0932,
+        "above_worst_rate": 0.1441,
+        "mean_width_days": 81.72
+      },
+      "train": {
+        "n": 472,
+        "mae": 15.72,
+        "r2": 0.4212,
+        "coverage_q10_q90": 0.9746
+      }
+    },
+    "1": {
+      "stage": 1,
+      "stage_name": "post_ministry_approval",
+      "stage_label_fa": "پس از مجوز وزارتخانه",
+      "feature_cols": [
+        "weight",
+        "log_weight",
+        "month",
+        "reg_doy_sin",
+        "reg_doy_cos",
+        "is_winter",
+        "is_peak",
+        "supplier_count",
+        "supplier_tier",
+        "supplier_hist_mean",
+        "recent_3_mean",
+        "country_hist_mean",
+        "sap_hist_mean",
+        "global_recent_mean",
+        "country_clean",
+        "supplier_clean",
+        "sap_code_clean",
+        "dur_reg_to_min",
+        "ministry_month"
+      ],
+      "n_features": 19,
+      "calibration": {
+        "delta_low": 24.38,
+        "delta_high": 20.28
+      },
+      "params": {
+        "iterations": 250,
+        "learning_rate": 0.0422,
+        "depth": 6,
+        "l2_leaf_reg": 14.12,
+        "random_seed": 42
+      },
+      "test": {
+        "n": 118,
+        "mae": 21.09,
+        "rmse": 26.15,
+        "r2": 0.1743,
+        "mape": 16.63,
+        "medae": 18.12,
+        "coverage_q10_q90": 0.8814,
+        "below_best_rate": 0.0678,
+        "above_worst_rate": 0.0508,
+        "mean_width_days": 75.91
+      },
+      "train": {
+        "n": 472,
+        "mae": 15.05,
+        "r2": 0.4671,
+        "coverage_q10_q90": 0.9809
+      }
+    },
+    "2": {
+      "stage": 2,
+      "stage_name": "post_vessel_departure",
+      "stage_label_fa": "پس از حرکت کشتی از مبدأ",
+      "feature_cols": [
+        "weight",
+        "log_weight",
+        "month",
+        "reg_doy_sin",
+        "reg_doy_cos",
+        "is_winter",
+        "is_peak",
+        "supplier_count",
+        "supplier_tier",
+        "supplier_hist_mean",
+        "recent_3_mean",
+        "country_hist_mean",
+        "sap_hist_mean",
+        "global_recent_mean",
+        "country_clean",
+        "supplier_clean",
+        "sap_code_clean",
+        "dur_reg_to_min",
+        "ministry_month",
+        "dur_min_to_ship",
+        "elapsed_reg_to_ship",
+        "ship_month"
+      ],
+      "n_features": 22,
+      "calibration": {
+        "delta_low": 13.83,
+        "delta_high": 12.91
+      },
+      "params": {
+        "iterations": 150,
+        "learning_rate": 0.0666,
+        "depth": 6,
+        "l2_leaf_reg": 4.0,
+        "random_seed": 42
+      },
+      "test": {
+        "n": 118,
+        "mae": 13.31,
+        "rmse": 17.44,
+        "r2": 0.6325,
+        "mape": 10.29,
+        "medae": 9.43,
+        "coverage_q10_q90": 0.8729,
+        "below_best_rate": 0.0763,
+        "above_worst_rate": 0.0508,
+        "mean_width_days": 52.14
+      },
+      "train": {
+        "n": 472,
+        "mae": 7.99,
+        "r2": 0.8094,
+        "coverage_q10_q90": 0.9936
+      }
+    },
+    "3": {
+      "stage": 3,
+      "stage_name": "post_customs_arrival",
+      "stage_label_fa": "پس از ورود به گمرک مقصد",
+      "feature_cols": [
+        "weight",
+        "log_weight",
+        "month",
+        "reg_doy_sin",
+        "reg_doy_cos",
+        "is_winter",
+        "is_peak",
+        "supplier_count",
+        "supplier_tier",
+        "supplier_hist_mean",
+        "recent_3_mean",
+        "country_hist_mean",
+        "sap_hist_mean",
+        "global_recent_mean",
+        "country_clean",
+        "supplier_clean",
+        "sap_code_clean",
+        "dur_reg_to_min",
+        "ministry_month",
+        "dur_min_to_ship",
+        "elapsed_reg_to_ship",
+        "ship_month",
+        "dur_ship_to_cust",
+        "elapsed_reg_to_cust",
+        "customs_month"
+      ],
+      "n_features": 25,
+      "calibration": {
+        "delta_low": 6.01,
+        "delta_high": 3.76
+      },
+      "params": {
+        "iterations": 350,
+        "learning_rate": 0.0257,
+        "depth": 3,
+        "l2_leaf_reg": 14.71,
+        "random_seed": 42
+      },
+      "test": {
+        "n": 118,
+        "mae": 8.16,
+        "rmse": 9.91,
+        "r2": 0.8813,
+        "mape": 6.34,
+        "medae": 7.76,
+        "coverage_q10_q90": 0.9322,
+        "below_best_rate": 0.0254,
+        "above_worst_rate": 0.0424,
+        "mean_width_days": 32.13
+      },
+      "train": {
+        "n": 472,
+        "mae": 6.77,
+        "r2": 0.8918,
+        "coverage_q10_q90": 0.9767
+      }
+    }
+  },
+  "benchmark": "r2",
+  "benchmark_stage": 0,
+  "benchmark_r2": 0.1065,
+  "trained_at": "2026-11-18T17:22:40.856578+00:00",
+  "source": "shipdata.csv"
+}
