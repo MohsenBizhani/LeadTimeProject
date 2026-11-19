@@ -1,0 +1,17 @@
+{
+  "name": "leadtime-lan-gateway",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:ui": "bun run build.ts",
+    "build": "bun run build.ts && bun build --compile --minify server.ts --outfile dist/leadtime-gateway",
+    "dev": "bun run build.ts && bun run server.ts",
+    "start": "bun run server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "typescript": "^5.9.0"
+  }
+}

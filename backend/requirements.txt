@@ -1,0 +1,9 @@
+# Optional production ASGI stack (when installed, backend/main.py uses FastAPI + Uvicorn;
+# otherwise it seamlessly falls back to Python 3.11 stdlib ThreadingHTTPServer).
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12
+
+# Optional standalone packaging tools:
+# pyinstaller>=6.10.0
+# nuitka>=2.4.0
